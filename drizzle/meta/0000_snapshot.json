@@ -1,0 +1,5601 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.payment_webhook_events": {
+      "name": "payment_webhook_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_event_id": {
+          "name": "provider_event_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_digest": {
+          "name": "payload_digest",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_json": {
+          "name": "payload_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processing_status": {
+          "name": "processing_status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "processing_error": {
+          "name": "processing_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_webhook_events_created": {
+          "name": "idx_webhook_events_created",
+          "columns": [
+            {
+              "expression": "created_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "citext",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_e164": {
+          "name": "phone_e164",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "email_verified_at": {
+          "name": "email_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_verified_at": {
+          "name": "phone_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_login_at": {
+          "name": "last_login_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "users_email_or_phone": {
+          "name": "users_email_or_phone",
+          "value": "(email IS NOT NULL) OR (phone_e164 IS NOT NULL)"
+        },
+        "users_status_check": {
+          "name": "users_status_check",
+          "value": "(status)::text = ANY ((ARRAY['active'::character varying, 'suspended'::character varying, 'deleted'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "users_update_self": {
+          "name": "users_update_self",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(id = app.session_user_id())",
+          "using": "(id = app.session_user_id())"
+        },
+        "users_select_self": {
+          "name": "users_select_self",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legal_name": {
+          "name": "legal_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tax_id": {
+          "name": "tax_id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "organizations_status_check": {
+          "name": "organizations_status_check",
+          "value": "(status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "organizations_select_member": {
+          "name": "organizations_select_member",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = organizations.id) AND (m.user_id = app.session_user_id()))))"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.organization_members": {
+      "name": "organization_members",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_org_members_org": {
+          "name": "idx_org_members_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_org_members_user": {
+          "name": "idx_org_members_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "organization_members_organization_id_fkey": {
+          "name": "organization_members_organization_id_fkey",
+          "tableFrom": "organization_members",
+          "tableTo": "organizations",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "organization_members_user_id_fkey": {
+          "name": "organization_members_user_id_fkey",
+          "tableFrom": "organization_members",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "organization_members_role_check": {
+          "name": "organization_members_role_check",
+          "value": "(role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "org_members_select_self": {
+          "name": "org_members_select_self",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(user_id = app.session_user_id())"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.venues": {
+      "name": "venues",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "line1": {
+          "name": "line1",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "line2": {
+          "name": "line2",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city": {
+          "name": "city",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region": {
+          "name": "region",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "postal_code": {
+          "name": "postal_code",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "country": {
+          "name": "country",
+          "type": "char(2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ET'"
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Africa/Addis_Ababa'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_venues_org": {
+          "name": "idx_venues_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "venues_organization_id_fkey": {
+          "name": "venues_organization_id_fkey",
+          "tableFrom": "venues",
+          "tableTo": "organizations",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "venues_staff_update": {
+          "name": "venues_staff_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "((organization_id IS NOT NULL) AND (EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = venues.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[]))))))",
+          "using": "((organization_id IS NOT NULL) AND (EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = venues.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[]))))))"
+        },
+        "venues_staff_insert": {
+          "name": "venues_staff_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "venues_select_policy": {
+          "name": "venues_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.events": {
+      "name": "events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "venue_id": {
+          "name": "venue_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sales_starts_at": {
+          "name": "sales_starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sales_ends_at": {
+          "name": "sales_ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_attendees": {
+          "name": "max_attendees",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_events_org_status_starts": {
+          "name": "idx_events_org_status_starts",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "status",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "starts_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_events_published_starts": {
+          "name": "idx_events_published_starts",
+          "columns": [
+            {
+              "expression": "status",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "starts_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "where": "((status)::text = 'published'::text)",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "events_organization_id_fkey": {
+          "name": "events_organization_id_fkey",
+          "tableFrom": "events",
+          "tableTo": "organizations",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "events_venue_id_fkey": {
+          "name": "events_venue_id_fkey",
+          "tableFrom": "events",
+          "tableTo": "venues",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "venue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "events_max_attendees_check": {
+          "name": "events_max_attendees_check",
+          "value": "(max_attendees IS NULL) OR (max_attendees > 0)"
+        },
+        "events_status_check": {
+          "name": "events_status_check",
+          "value": "(status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'cancelled'::character varying, 'completed'::character varying])::text[])"
+        },
+        "events_time_order": {
+          "name": "events_time_order",
+          "value": "ends_at > starts_at"
+        }
+      },
+      "policies": {
+        "events_staff_delete": {
+          "name": "events_staff_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = events.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying])::text[])))))"
+        },
+        "events_staff_update": {
+          "name": "events_staff_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "events_staff_insert": {
+          "name": "events_staff_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "events_select_policy": {
+          "name": "events_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.ticket_types": {
+      "name": "ticket_types",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price_amount_minor": {
+          "name": "price_amount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ETB'"
+        },
+        "quantity_total": {
+          "name": "quantity_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity_sold": {
+          "name": "quantity_sold",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "max_per_order": {
+          "name": "max_per_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "sales_starts_at": {
+          "name": "sales_starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sales_ends_at": {
+          "name": "sales_ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_ticket_types_event": {
+          "name": "idx_ticket_types_event",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "active",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ticket_types_event_id_fkey": {
+          "name": "ticket_types_event_id_fkey",
+          "tableFrom": "ticket_types",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "ticket_types_max_per_order_check": {
+          "name": "ticket_types_max_per_order_check",
+          "value": "max_per_order >= 1"
+        },
+        "ticket_types_price_amount_minor_check": {
+          "name": "ticket_types_price_amount_minor_check",
+          "value": "price_amount_minor >= 0"
+        },
+        "ticket_types_quantity_sold_check": {
+          "name": "ticket_types_quantity_sold_check",
+          "value": "quantity_sold >= 0"
+        },
+        "ticket_types_quantity_total_check": {
+          "name": "ticket_types_quantity_total_check",
+          "value": "quantity_total >= 0"
+        },
+        "ticket_types_sold_vs_total": {
+          "name": "ticket_types_sold_vs_total",
+          "value": "quantity_sold <= quantity_total"
+        }
+      },
+      "policies": {
+        "ticket_types_staff_manage": {
+          "name": "ticket_types_staff_manage",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = ticket_types.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = ticket_types.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))"
+        },
+        "ticket_types_select_policy": {
+          "name": "ticket_types_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.orders": {
+      "name": "orders",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending_payment'"
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ETB'"
+        },
+        "subtotal_minor": {
+          "name": "subtotal_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "fees_minor": {
+          "name": "fees_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "tax_minor": {
+          "name": "tax_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "discount_minor": {
+          "name": "discount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_minor": {
+          "name": "total_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "placed_at": {
+          "name": "placed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "paid_at": {
+          "name": "paid_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_orders_event_status": {
+          "name": "idx_orders_event_status",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "status",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_orders_user_placed": {
+          "name": "idx_orders_user_placed",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "placed_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "orders_event_id_fkey": {
+          "name": "orders_event_id_fkey",
+          "tableFrom": "orders",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "orders_user_id_fkey": {
+          "name": "orders_user_id_fkey",
+          "tableFrom": "orders",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "orders_discount_minor_check": {
+          "name": "orders_discount_minor_check",
+          "value": "discount_minor >= 0"
+        },
+        "orders_fees_minor_check": {
+          "name": "orders_fees_minor_check",
+          "value": "fees_minor >= 0"
+        },
+        "orders_status_check": {
+          "name": "orders_status_check",
+          "value": "(status)::text = ANY ((ARRAY['pending_payment'::character varying, 'paid'::character varying, 'cancelled'::character varying, 'refunded'::character varying, 'partially_refunded'::character varying])::text[])"
+        },
+        "orders_subtotal_minor_check": {
+          "name": "orders_subtotal_minor_check",
+          "value": "subtotal_minor >= 0"
+        },
+        "orders_tax_minor_check": {
+          "name": "orders_tax_minor_check",
+          "value": "tax_minor >= 0"
+        },
+        "orders_total_minor_check": {
+          "name": "orders_total_minor_check",
+          "value": "total_minor >= 0"
+        }
+      },
+      "policies": {
+        "orders_update_own": {
+          "name": "orders_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(user_id = app.session_user_id())",
+          "using": "(user_id = app.session_user_id())"
+        },
+        "orders_insert_own": {
+          "name": "orders_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "orders_select_own": {
+          "name": "orders_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.order_items": {
+      "name": "order_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ticket_type_id": {
+          "name": "ticket_type_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_price_minor": {
+          "name": "unit_price_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "line_total_minor": {
+          "name": "line_total_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_order_items_order": {
+          "name": "idx_order_items_order",
+          "columns": [
+            {
+              "expression": "order_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_order_items_ticket_type": {
+          "name": "idx_order_items_ticket_type",
+          "columns": [
+            {
+              "expression": "ticket_type_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "order_items_order_id_fkey": {
+          "name": "order_items_order_id_fkey",
+          "tableFrom": "order_items",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "order_items_ticket_type_id_fkey": {
+          "name": "order_items_ticket_type_id_fkey",
+          "tableFrom": "order_items",
+          "tableTo": "ticket_types",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "ticket_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "order_items_line_total_minor_check": {
+          "name": "order_items_line_total_minor_check",
+          "value": "line_total_minor >= 0"
+        },
+        "order_items_quantity_check": {
+          "name": "order_items_quantity_check",
+          "value": "quantity >= 1"
+        },
+        "order_items_unit_price_minor_check": {
+          "name": "order_items_unit_price_minor_check",
+          "value": "unit_price_minor >= 0"
+        }
+      },
+      "policies": {
+        "order_items_update_own": {
+          "name": "order_items_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = order_items.order_id) AND (o.user_id = app.session_user_id()))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = order_items.order_id) AND (o.user_id = app.session_user_id()))))"
+        },
+        "order_items_insert_own": {
+          "name": "order_items_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "order_items_select_own": {
+          "name": "order_items_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.tickets": {
+      "name": "tickets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "order_item_id": {
+          "name": "order_item_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ticket_type_id": {
+          "name": "ticket_type_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "holder_name": {
+          "name": "holder_name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'valid'"
+        },
+        "redemption_code_hash": {
+          "name": "redemption_code_hash",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checked_in_at": {
+          "name": "checked_in_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checked_in_by_user_id": {
+          "name": "checked_in_by_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "voided_at": {
+          "name": "voided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_tickets_event_status": {
+          "name": "idx_tickets_event_status",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "status",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_tickets_order_item": {
+          "name": "idx_tickets_order_item",
+          "columns": [
+            {
+              "expression": "order_item_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "tickets_checked_in_by_user_id_fkey": {
+          "name": "tickets_checked_in_by_user_id_fkey",
+          "tableFrom": "tickets",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "checked_in_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "tickets_event_id_fkey": {
+          "name": "tickets_event_id_fkey",
+          "tableFrom": "tickets",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "tickets_order_item_id_fkey": {
+          "name": "tickets_order_item_id_fkey",
+          "tableFrom": "tickets",
+          "tableTo": "order_items",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "tickets_ticket_type_id_fkey": {
+          "name": "tickets_ticket_type_id_fkey",
+          "tableFrom": "tickets",
+          "tableTo": "ticket_types",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "ticket_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tickets_status_check": {
+          "name": "tickets_status_check",
+          "value": "(status)::text = ANY ((ARRAY['valid'::character varying, 'cancelled'::character varying, 'refunded'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "tickets_staff_checkin": {
+          "name": "tickets_staff_checkin",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = tickets.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = tickets.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))"
+        },
+        "tickets_update_own": {
+          "name": "tickets_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "tickets_select_own": {
+          "name": "tickets_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.payments": {
+      "name": "payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_payment_id": {
+          "name": "provider_payment_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_fee_minor": {
+          "name": "provider_fee_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "raw_metadata": {
+          "name": "raw_metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_payments_order": {
+          "name": "idx_payments_order",
+          "columns": [
+            {
+              "expression": "order_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payments_order_id_fkey": {
+          "name": "payments_order_id_fkey",
+          "tableFrom": "payments",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "payments_amount_minor_check": {
+          "name": "payments_amount_minor_check",
+          "value": "amount_minor >= 0"
+        },
+        "payments_provider_fee_minor_check": {
+          "name": "payments_provider_fee_minor_check",
+          "value": "(provider_fee_minor IS NULL) OR (provider_fee_minor >= 0)"
+        },
+        "payments_status_check": {
+          "name": "payments_status_check",
+          "value": "(status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'succeeded'::character varying, 'failed'::character varying, 'refunded'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "payments_select_own": {
+          "name": "payments_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = payments.order_id) AND (o.user_id = app.session_user_id()))))"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.refunds": {
+      "name": "refunds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_id": {
+          "name": "payment_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_refund_id": {
+          "name": "provider_refund_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_refunds_order": {
+          "name": "idx_refunds_order",
+          "columns": [
+            {
+              "expression": "order_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "refunds_created_by_user_id_fkey": {
+          "name": "refunds_created_by_user_id_fkey",
+          "tableFrom": "refunds",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "refunds_order_id_fkey": {
+          "name": "refunds_order_id_fkey",
+          "tableFrom": "refunds",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "refunds_payment_id_fkey": {
+          "name": "refunds_payment_id_fkey",
+          "tableFrom": "refunds",
+          "tableTo": "payments",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "refunds_amount_minor_check": {
+          "name": "refunds_amount_minor_check",
+          "value": "amount_minor > 0"
+        },
+        "refunds_status_check": {
+          "name": "refunds_status_check",
+          "value": "(status)::text = ANY ((ARRAY['pending'::character varying, 'succeeded'::character varying, 'failed'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "refunds_select_own": {
+          "name": "refunds_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = refunds.order_id) AND (o.user_id = app.session_user_id()))))"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.order_events": {
+      "name": "order_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_order_events_order_created": {
+          "name": "idx_order_events_order_created",
+          "columns": [
+            {
+              "expression": "order_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "created_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "order_events_actor_user_id_fkey": {
+          "name": "order_events_actor_user_id_fkey",
+          "tableFrom": "order_events",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "order_events_order_id_fkey": {
+          "name": "order_events_order_id_fkey",
+          "tableFrom": "order_events",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "order_events_insert_own": {
+          "name": "order_events_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = order_events.order_id) AND (o.user_id = app.session_user_id()))))"
+        },
+        "order_events_select_own": {
+          "name": "order_events_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.transport_requests": {
+      "name": "transport_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "direction": {
+          "name": "direction",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_note": {
+          "name": "pickup_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pickup_lat": {
+          "name": "pickup_lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pickup_lng": {
+          "name": "pickup_lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_phone": {
+          "name": "contact_phone",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'requested'"
+        },
+        "internal_notes": {
+          "name": "internal_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "transport_requests_order_id_fkey": {
+          "name": "transport_requests_order_id_fkey",
+          "tableFrom": "transport_requests",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "transport_requests_direction_check": {
+          "name": "transport_requests_direction_check",
+          "value": "(direction)::text = ANY ((ARRAY['to_event'::character varying, 'from_event'::character varying, 'both'::character varying])::text[])"
+        },
+        "transport_requests_status_check": {
+          "name": "transport_requests_status_check",
+          "value": "(status)::text = ANY ((ARRAY['requested'::character varying, 'assigned'::character varying, 'completed'::character varying, 'cancelled'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "transport_req_update_own": {
+          "name": "transport_req_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = transport_requests.order_id) AND (o.user_id = app.session_user_id()))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = transport_requests.order_id) AND (o.user_id = app.session_user_id()))))"
+        },
+        "transport_req_insert_own": {
+          "name": "transport_req_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "transport_req_select_own": {
+          "name": "transport_req_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.transport_groups": {
+      "name": "transport_groups",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_landmark": {
+          "name": "pickup_landmark",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scheduled_pickup_at": {
+          "name": "scheduled_pickup_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vehicle_description": {
+          "name": "vehicle_description",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "driver_phone": {
+          "name": "driver_phone",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'planned'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_transport_groups_event": {
+          "name": "idx_transport_groups_event",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "transport_groups_event_id_fkey": {
+          "name": "transport_groups_event_id_fkey",
+          "tableFrom": "transport_groups",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "transport_groups_status_check": {
+          "name": "transport_groups_status_check",
+          "value": "(status)::text = ANY ((ARRAY['planned'::character varying, 'dispatched'::character varying, 'completed'::character varying, 'cancelled'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "transport_groups_staff_all": {
+          "name": "transport_groups_staff_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = transport_groups.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = transport_groups.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.transport_assignments": {
+      "name": "transport_assignments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transport_request_id": {
+          "name": "transport_request_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transport_group_id": {
+          "name": "transport_group_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assigned_at": {
+          "name": "assigned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "assigned_by_user_id": {
+          "name": "assigned_by_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_transport_assignments_group": {
+          "name": "idx_transport_assignments_group",
+          "columns": [
+            {
+              "expression": "transport_group_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "transport_assignments_assigned_by_user_id_fkey": {
+          "name": "transport_assignments_assigned_by_user_id_fkey",
+          "tableFrom": "transport_assignments",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "assigned_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "transport_assignments_transport_group_id_fkey": {
+          "name": "transport_assignments_transport_group_id_fkey",
+          "tableFrom": "transport_assignments",
+          "tableTo": "transport_groups",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "transport_group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "transport_assignments_transport_request_id_fkey": {
+          "name": "transport_assignments_transport_request_id_fkey",
+          "tableFrom": "transport_assignments",
+          "tableTo": "transport_requests",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "transport_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "transport_assign_staff_delete": {
+          "name": "transport_assign_staff_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(EXISTS ( SELECT 1\n   FROM ((transport_groups tg\n     JOIN events e ON ((e.id = tg.event_id)))\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((tg.id = transport_assignments.transport_group_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))"
+        },
+        "transport_assign_staff_update": {
+          "name": "transport_assign_staff_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "transport_assign_staff_write": {
+          "name": "transport_assign_staff_write",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "transport_assign_select": {
+          "name": "transport_assign_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.audit_admin_events": {
+      "name": "audit_admin_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_table": {
+          "name": "entity_table",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "impersonated_user_id": {
+          "name": "impersonated_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "inet",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_audit_admin_actor": {
+          "name": "idx_audit_admin_actor",
+          "columns": [
+            {
+              "expression": "actor_user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "created_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_audit_admin_created": {
+          "name": "idx_audit_admin_created",
+          "columns": [
+            {
+              "expression": "created_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "audit_admin_events_actor_user_id_fkey": {
+          "name": "audit_admin_events_actor_user_id_fkey",
+          "tableFrom": "audit_admin_events",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "audit_admin_events_impersonated_user_id_fkey": {
+          "name": "audit_admin_events_impersonated_user_id_fkey",
+          "tableFrom": "audit_admin_events",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "impersonated_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.user_security_tokens": {
+      "name": "user_security_tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_user_security_tokens_expires": {
+          "name": "idx_user_security_tokens_expires",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_user_security_tokens_user_purpose": {
+          "name": "idx_user_security_tokens_user_purpose",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "purpose",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_security_tokens_user_id_fkey": {
+          "name": "user_security_tokens_user_id_fkey",
+          "tableFrom": "user_security_tokens",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.analytics_events": {
+      "name": "analytics_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anon_id": {
+          "name": "anon_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_name": {
+          "name": "event_name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "properties": {
+          "name": "properties",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_analytics_name_time": {
+          "name": "idx_analytics_name_time",
+          "columns": [
+            {
+              "expression": "event_name",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "occurred_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_analytics_occurred": {
+          "name": "idx_analytics_occurred",
+          "columns": [
+            {
+              "expression": "occurred_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_analytics_user_time": {
+          "name": "idx_analytics_user_time",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "occurred_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "analytics_events_user_id_fkey": {
+          "name": "analytics_events_user_id_fkey",
+          "tableFrom": "analytics_events",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.tags": {
+      "name": "tags",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "tags_select_all": {
+          "name": "tags_select_all",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "true"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.event_tags": {
+      "name": "event_tags",
+      "schema": "",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_event_tags_tag": {
+          "name": "idx_event_tags_tag",
+          "columns": [
+            {
+              "expression": "tag_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "event_tags_event_id_fkey": {
+          "name": "event_tags_event_id_fkey",
+          "tableFrom": "event_tags",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "event_tags_tag_id_fkey": {
+          "name": "event_tags_tag_id_fkey",
+          "tableFrom": "event_tags",
+          "tableTo": "tags",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "tag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "event_tags_staff_write": {
+          "name": "event_tags_staff_write",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = event_tags.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = event_tags.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))"
+        },
+        "event_tags_select_visible": {
+          "name": "event_tags_select_visible",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.promo_codes": {
+      "name": "promo_codes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code": {
+          "name": "code",
+          "type": "citext",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discount_kind": {
+          "name": "discount_kind",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "percent_basis_points": {
+          "name": "percent_basis_points",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fixed_amount_minor": {
+          "name": "fixed_amount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ETB'"
+        },
+        "max_redemptions": {
+          "name": "max_redemptions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "redemptions_count": {
+          "name": "redemptions_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "per_user_limit": {
+          "name": "per_user_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "min_order_minor": {
+          "name": "min_order_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_promo_codes_active": {
+          "name": "idx_promo_codes_active",
+          "columns": [
+            {
+              "expression": "active",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "starts_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "bool_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "ends_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "bool_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_promo_codes_event": {
+          "name": "idx_promo_codes_event",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_promo_codes_org": {
+          "name": "idx_promo_codes_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "promo_codes_event_id_fkey": {
+          "name": "promo_codes_event_id_fkey",
+          "tableFrom": "promo_codes",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "promo_codes_organization_id_fkey": {
+          "name": "promo_codes_organization_id_fkey",
+          "tableFrom": "promo_codes",
+          "tableTo": "organizations",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "promo_codes_discount_kind_check": {
+          "name": "promo_codes_discount_kind_check",
+          "value": "(discount_kind)::text = ANY ((ARRAY['percent_bp'::character varying, 'fixed_minor'::character varying])::text[])"
+        },
+        "promo_codes_fixed_amount_minor_check": {
+          "name": "promo_codes_fixed_amount_minor_check",
+          "value": "(fixed_amount_minor IS NULL) OR (fixed_amount_minor >= 0)"
+        },
+        "promo_codes_max_redemptions_check": {
+          "name": "promo_codes_max_redemptions_check",
+          "value": "(max_redemptions IS NULL) OR (max_redemptions > 0)"
+        },
+        "promo_codes_min_order_minor_check": {
+          "name": "promo_codes_min_order_minor_check",
+          "value": "min_order_minor >= 0"
+        },
+        "promo_codes_per_user_limit_check": {
+          "name": "promo_codes_per_user_limit_check",
+          "value": "per_user_limit >= 1"
+        },
+        "promo_codes_percent_basis_points_check": {
+          "name": "promo_codes_percent_basis_points_check",
+          "value": "(percent_basis_points IS NULL) OR ((percent_basis_points > 0) AND (percent_basis_points <= 10000))"
+        },
+        "promo_codes_redemptions_count_check": {
+          "name": "promo_codes_redemptions_count_check",
+          "value": "redemptions_count >= 0"
+        },
+        "promo_discount_shape": {
+          "name": "promo_discount_shape",
+          "value": "(((discount_kind)::text = 'percent_bp'::text) AND (percent_basis_points IS NOT NULL) AND (fixed_amount_minor IS NULL)) OR (((discount_kind)::text = 'fixed_minor'::text) AND (fixed_amount_minor IS NOT NULL) AND (percent_basis_points IS NULL))"
+        },
+        "promo_event_requires_org": {
+          "name": "promo_event_requires_org",
+          "value": "(event_id IS NULL) OR (organization_id IS NOT NULL)"
+        }
+      },
+      "policies": {
+        "promo_staff_delete": {
+          "name": "promo_staff_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying])::text[])) AND ((promo_codes.organization_id = m.organization_id) OR (EXISTS ( SELECT 1\n           FROM events e\n          WHERE ((e.id = promo_codes.event_id) AND (e.organization_id = m.organization_id))))))))"
+        },
+        "promo_staff_update": {
+          "name": "promo_staff_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "promo_staff_write": {
+          "name": "promo_staff_write",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "promo_select_staff": {
+          "name": "promo_select_staff",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.order_promo_applications": {
+      "name": "order_promo_applications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "promo_code_id": {
+          "name": "promo_code_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discount_minor": {
+          "name": "discount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_order_promo_order": {
+          "name": "idx_order_promo_order",
+          "columns": [
+            {
+              "expression": "order_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_order_promo_promo": {
+          "name": "idx_order_promo_promo",
+          "columns": [
+            {
+              "expression": "promo_code_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "order_promo_applications_order_id_fkey": {
+          "name": "order_promo_applications_order_id_fkey",
+          "tableFrom": "order_promo_applications",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "order_promo_applications_promo_code_id_fkey": {
+          "name": "order_promo_applications_promo_code_id_fkey",
+          "tableFrom": "order_promo_applications",
+          "tableTo": "promo_codes",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "promo_code_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "order_promo_applications_discount_minor_check": {
+          "name": "order_promo_applications_discount_minor_check",
+          "value": "discount_minor >= 0"
+        }
+      },
+      "policies": {
+        "order_promo_insert_own": {
+          "name": "order_promo_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM orders o\n  WHERE ((o.id = order_promo_applications.order_id) AND (o.user_id = app.session_user_id()))))"
+        },
+        "order_promo_staff_select": {
+          "name": "order_promo_staff_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "order_promo_select_own": {
+          "name": "order_promo_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.waitlist_entries": {
+      "name": "waitlist_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ticket_type_id": {
+          "name": "ticket_type_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'waiting'"
+        },
+        "position_hint": {
+          "name": "position_hint",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offered_at": {
+          "name": "offered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fulfilled_order_id": {
+          "name": "fulfilled_order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes_internal": {
+          "name": "notes_internal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_waitlist_event_status": {
+          "name": "idx_waitlist_event_status",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "status",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "waitlist_user_event_any_type": {
+          "name": "waitlist_user_event_any_type",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "where": "(ticket_type_id IS NULL)",
+          "with": {}
+        },
+        "waitlist_user_event_ticket_type": {
+          "name": "waitlist_user_event_ticket_type",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "ticket_type_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "where": "(ticket_type_id IS NOT NULL)",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "waitlist_entries_event_id_fkey": {
+          "name": "waitlist_entries_event_id_fkey",
+          "tableFrom": "waitlist_entries",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "waitlist_entries_fulfilled_order_id_fkey": {
+          "name": "waitlist_entries_fulfilled_order_id_fkey",
+          "tableFrom": "waitlist_entries",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "fulfilled_order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "waitlist_entries_ticket_type_id_fkey": {
+          "name": "waitlist_entries_ticket_type_id_fkey",
+          "tableFrom": "waitlist_entries",
+          "tableTo": "ticket_types",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "ticket_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "waitlist_entries_user_id_fkey": {
+          "name": "waitlist_entries_user_id_fkey",
+          "tableFrom": "waitlist_entries",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "waitlist_entries_status_check": {
+          "name": "waitlist_entries_status_check",
+          "value": "(status)::text = ANY ((ARRAY['waiting'::character varying, 'offered'::character varying, 'fulfilled'::character varying, 'expired'::character varying, 'cancelled'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "waitlist_delete_self": {
+          "name": "waitlist_delete_self",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(user_id = app.session_user_id())"
+        },
+        "waitlist_update_self": {
+          "name": "waitlist_update_self",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "waitlist_insert_self": {
+          "name": "waitlist_insert_self",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "waitlist_staff_select": {
+          "name": "waitlist_staff_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "waitlist_select_self": {
+          "name": "waitlist_select_self",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "waitlist_staff_update": {
+          "name": "waitlist_staff_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.organizer_payout_profiles": {
+      "name": "organizer_payout_profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payout_provider": {
+          "name": "payout_provider",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'manual'"
+        },
+        "provider_account_id": {
+          "name": "provider_account_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_currency": {
+          "name": "default_currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ETB'"
+        },
+        "payout_metadata": {
+          "name": "payout_metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "organizer_payout_profiles_organization_id_fkey": {
+          "name": "organizer_payout_profiles_organization_id_fkey",
+          "tableFrom": "organizer_payout_profiles",
+          "tableTo": "organizations",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "payout_profile_write_admin": {
+          "name": "payout_profile_write_admin",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = organizer_payout_profiles.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying])::text[])))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = organizer_payout_profiles.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying])::text[])))))"
+        },
+        "payout_profile_select_admin": {
+          "name": "payout_profile_select_admin",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.payout_batches": {
+      "name": "payout_batches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_start": {
+          "name": "period_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_end": {
+          "name": "period_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "gross_minor": {
+          "name": "gross_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "platform_fee_minor": {
+          "name": "platform_fee_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "net_to_org_minor": {
+          "name": "net_to_org_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ETB'"
+        },
+        "provider_payout_id": {
+          "name": "provider_payout_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_payout_batches_org": {
+          "name": "idx_payout_batches_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "status",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payout_batches_organization_id_fkey": {
+          "name": "payout_batches_organization_id_fkey",
+          "tableFrom": "payout_batches",
+          "tableTo": "organizations",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "payout_batch_period": {
+          "name": "payout_batch_period",
+          "value": "period_end > period_start"
+        },
+        "payout_batches_gross_minor_check": {
+          "name": "payout_batches_gross_minor_check",
+          "value": "gross_minor >= 0"
+        },
+        "payout_batches_net_to_org_minor_check": {
+          "name": "payout_batches_net_to_org_minor_check",
+          "value": "net_to_org_minor >= 0"
+        },
+        "payout_batches_platform_fee_minor_check": {
+          "name": "payout_batches_platform_fee_minor_check",
+          "value": "platform_fee_minor >= 0"
+        },
+        "payout_batches_status_check": {
+          "name": "payout_batches_status_check",
+          "value": "(status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'processing'::character varying, 'paid'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "payout_batches_admin": {
+          "name": "payout_batches_admin",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = payout_batches.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying])::text[])))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = payout_batches.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying])::text[])))))"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.payout_batch_items": {
+      "name": "payout_batch_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payout_batch_id": {
+          "name": "payout_batch_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gross_minor": {
+          "name": "gross_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "platform_fee_minor": {
+          "name": "platform_fee_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "net_to_org_minor": {
+          "name": "net_to_org_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_payout_batch_items_order": {
+          "name": "idx_payout_batch_items_order",
+          "columns": [
+            {
+              "expression": "order_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payout_batch_items_order_id_fkey": {
+          "name": "payout_batch_items_order_id_fkey",
+          "tableFrom": "payout_batch_items",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "payout_batch_items_payout_batch_id_fkey": {
+          "name": "payout_batch_items_payout_batch_id_fkey",
+          "tableFrom": "payout_batch_items",
+          "tableTo": "payout_batches",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "payout_batch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "payout_batch_items_gross_minor_check": {
+          "name": "payout_batch_items_gross_minor_check",
+          "value": "gross_minor >= 0"
+        },
+        "payout_batch_items_net_to_org_minor_check": {
+          "name": "payout_batch_items_net_to_org_minor_check",
+          "value": "net_to_org_minor >= 0"
+        },
+        "payout_batch_items_platform_fee_minor_check": {
+          "name": "payout_batch_items_platform_fee_minor_check",
+          "value": "platform_fee_minor >= 0"
+        }
+      },
+      "policies": {
+        "payout_items_admin_delete": {
+          "name": "payout_items_admin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "(EXISTS ( SELECT 1\n   FROM (payout_batches pb\n     JOIN organization_members m ON ((m.organization_id = pb.organization_id)))\n  WHERE ((pb.id = payout_batch_items.payout_batch_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying])::text[])))))"
+        },
+        "payout_items_admin_update": {
+          "name": "payout_items_admin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "payout_items_admin_write": {
+          "name": "payout_items_admin_write",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "payout_items_admin_select": {
+          "name": "payout_items_admin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.notification_templates": {
+      "name": "notification_templates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "template_key": {
+          "name": "template_key",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en'"
+        },
+        "subject_template": {
+          "name": "subject_template",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "body_template": {
+          "name": "body_template",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "notification_templates_select": {
+          "name": "notification_templates_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "true"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.notification_jobs": {
+      "name": "notification_jobs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "template_id": {
+          "name": "template_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "channel": {
+          "name": "channel",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_address": {
+          "name": "to_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "correlation_id": {
+          "name": "correlation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_notification_jobs_status_next": {
+          "name": "idx_notification_jobs_status_next",
+          "columns": [
+            {
+              "expression": "status",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "next_attempt_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_notification_jobs_user": {
+          "name": "idx_notification_jobs_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "created_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notification_jobs_template_id_fkey": {
+          "name": "notification_jobs_template_id_fkey",
+          "tableFrom": "notification_jobs",
+          "tableTo": "notification_templates",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "template_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "notification_jobs_user_id_fkey": {
+          "name": "notification_jobs_user_id_fkey",
+          "tableFrom": "notification_jobs",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "notification_jobs_attempts_check": {
+          "name": "notification_jobs_attempts_check",
+          "value": "attempts >= 0"
+        },
+        "notification_jobs_channel_check": {
+          "name": "notification_jobs_channel_check",
+          "value": "(channel)::text = ANY ((ARRAY['email'::character varying, 'sms'::character varying, 'push'::character varying, 'in_app'::character varying])::text[])"
+        },
+        "notification_jobs_status_check": {
+          "name": "notification_jobs_status_check",
+          "value": "(status)::text = ANY ((ARRAY['pending'::character varying, 'queued'::character varying, 'sending'::character varying, 'sent'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "notification_jobs_insert_own": {
+          "name": "notification_jobs_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(user_id = app.session_user_id())"
+        },
+        "notification_jobs_select_own": {
+          "name": "notification_jobs_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.file_assets": {
+      "name": "file_assets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "storage_provider": {
+          "name": "storage_provider",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bucket": {
+          "name": "bucket",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum_sha256": {
+          "name": "checksum_sha256",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uploaded_by_user_id": {
+          "name": "uploaded_by_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'general'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_file_assets_event": {
+          "name": "idx_file_assets_event",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_file_assets_org": {
+          "name": "idx_file_assets_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "file_assets_event_id_fkey": {
+          "name": "file_assets_event_id_fkey",
+          "tableFrom": "file_assets",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "file_assets_organization_id_fkey": {
+          "name": "file_assets_organization_id_fkey",
+          "tableFrom": "file_assets",
+          "tableTo": "organizations",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "file_assets_uploaded_by_user_id_fkey": {
+          "name": "file_assets_uploaded_by_user_id_fkey",
+          "tableFrom": "file_assets",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "uploaded_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "file_assets_byte_size_check": {
+          "name": "file_assets_byte_size_check",
+          "value": "byte_size >= 0"
+        },
+        "file_assets_purpose_check": {
+          "name": "file_assets_purpose_check",
+          "value": "(purpose)::text = ANY ((ARRAY['general'::character varying, 'event_cover'::character varying, 'event_gallery'::character varying, 'user_avatar'::character varying, 'org_logo'::character varying, 'export_archive'::character varying, 'other'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "file_assets_insert": {
+          "name": "file_assets_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "((uploaded_by_user_id = app.session_user_id()) OR (EXISTS ( SELECT 1\n   FROM organization_members m\n  WHERE ((m.organization_id = file_assets.organization_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[]))))) OR ((event_id IS NOT NULL) AND (EXISTS ( SELECT 1\n   FROM (events e\n     JOIN organization_members m ON ((m.organization_id = e.organization_id)))\n  WHERE ((e.id = file_assets.event_id) AND (m.user_id = app.session_user_id()) AND ((m.role)::text = ANY ((ARRAY['owner'::character varying, 'admin'::character varying, 'staff'::character varying])::text[])))))))"
+        },
+        "file_assets_select": {
+          "name": "file_assets_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.feature_flags": {
+      "name": "feature_flags",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flag_key": {
+          "name": "flag_key",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "rollout_percent": {
+          "name": "rollout_percent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "feature_flags_rollout_percent_check": {
+          "name": "feature_flags_rollout_percent_check",
+          "value": "(rollout_percent >= 0) AND (rollout_percent <= 100)"
+        }
+      },
+      "policies": {
+        "feature_flags_select": {
+          "name": "feature_flags_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ],
+          "using": "true"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.data_subject_export_requests": {
+      "name": "data_subject_export_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "file_asset_id": {
+          "name": "file_asset_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_at": {
+          "name": "requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ready_at": {
+          "name": "ready_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_data_export_user": {
+          "name": "idx_data_export_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "requested_at",
+              "asc": false,
+              "nulls": "first",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "data_subject_export_requests_file_asset_id_fkey": {
+          "name": "data_subject_export_requests_file_asset_id_fkey",
+          "tableFrom": "data_subject_export_requests",
+          "tableTo": "file_assets",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "file_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "data_subject_export_requests_user_id_fkey": {
+          "name": "data_subject_export_requests_user_id_fkey",
+          "tableFrom": "data_subject_export_requests",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "data_subject_export_requests_status_check": {
+          "name": "data_subject_export_requests_status_check",
+          "value": "(status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'ready'::character varying, 'expired'::character varying, 'failed'::character varying])::text[])"
+        }
+      },
+      "policies": {
+        "data_export_update_own": {
+          "name": "data_export_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(user_id = app.session_user_id())",
+          "using": "(user_id = app.session_user_id())"
+        },
+        "data_export_insert_own": {
+          "name": "data_export_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "data_export_select_own": {
+          "name": "data_export_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.user_event_favorites": {
+      "name": "user_event_favorites",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_favorites_event": {
+          "name": "idx_favorites_event",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_event_favorites_event_id_fkey": {
+          "name": "user_event_favorites_event_id_fkey",
+          "tableFrom": "user_event_favorites",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_event_favorites_user_id_fkey": {
+          "name": "user_event_favorites_user_id_fkey",
+          "tableFrom": "user_event_favorites",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "favorites_all_own": {
+          "name": "favorites_all_own",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(user_id = app.session_user_id())",
+          "using": "(user_id = app.session_user_id())"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.cart_sessions": {
+      "name": "cart_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "label": {
+          "name": "label",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_cart_sessions_expires": {
+          "name": "idx_cart_sessions_expires",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "timestamptz_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_cart_sessions_user": {
+          "name": "idx_cart_sessions_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cart_sessions_user_id_fkey": {
+          "name": "cart_sessions_user_id_fkey",
+          "tableFrom": "cart_sessions",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "cart_session_own": {
+          "name": "cart_session_own",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "((user_id = app.session_user_id()) AND (user_id IS NOT NULL))",
+          "using": "((user_id = app.session_user_id()) AND (user_id IS NOT NULL))"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.cart_lines": {
+      "name": "cart_lines",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cart_id": {
+          "name": "cart_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ticket_type_id": {
+          "name": "ticket_type_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_cart_lines_cart": {
+          "name": "idx_cart_lines_cart",
+          "columns": [
+            {
+              "expression": "cart_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_cart_lines_event": {
+          "name": "idx_cart_lines_event",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cart_lines_cart_id_fkey": {
+          "name": "cart_lines_cart_id_fkey",
+          "tableFrom": "cart_lines",
+          "tableTo": "cart_sessions",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "cart_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cart_lines_event_id_fkey": {
+          "name": "cart_lines_event_id_fkey",
+          "tableFrom": "cart_lines",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cart_lines_ticket_type_id_fkey": {
+          "name": "cart_lines_ticket_type_id_fkey",
+          "tableFrom": "cart_lines",
+          "tableTo": "ticket_types",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "ticket_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "cart_lines_quantity_check": {
+          "name": "cart_lines_quantity_check",
+          "value": "quantity >= 1"
+        }
+      },
+      "policies": {
+        "cart_lines_via_cart": {
+          "name": "cart_lines_via_cart",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(EXISTS ( SELECT 1\n   FROM cart_sessions c\n  WHERE ((c.id = cart_lines.cart_id) AND (c.user_id = app.session_user_id()))))",
+          "using": "(EXISTS ( SELECT 1\n   FROM cart_sessions c\n  WHERE ((c.id = cart_lines.cart_id) AND (c.user_id = app.session_user_id()))))"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.referral_codes": {
+      "name": "referral_codes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "citext",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_uses": {
+          "name": "max_uses",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uses_count": {
+          "name": "uses_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_referral_codes_user": {
+          "name": "idx_referral_codes_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "referral_codes_user_id_fkey": {
+          "name": "referral_codes_user_id_fkey",
+          "tableFrom": "referral_codes",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "referral_codes_max_uses_check": {
+          "name": "referral_codes_max_uses_check",
+          "value": "(max_uses IS NULL) OR (max_uses > 0)"
+        },
+        "referral_codes_uses_count_check": {
+          "name": "referral_codes_uses_count_check",
+          "value": "uses_count >= 0"
+        }
+      },
+      "policies": {
+        "referral_codes_own": {
+          "name": "referral_codes_own",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(user_id = app.session_user_id())",
+          "using": "(user_id = app.session_user_id())"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.referral_attributions": {
+      "name": "referral_attributions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "referral_code_id": {
+          "name": "referral_code_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "referred_user_id": {
+          "name": "referred_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_order_id": {
+          "name": "first_order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_referral_attr_code": {
+          "name": "idx_referral_attr_code",
+          "columns": [
+            {
+              "expression": "referral_code_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int8_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "referral_attributions_first_order_id_fkey": {
+          "name": "referral_attributions_first_order_id_fkey",
+          "tableFrom": "referral_attributions",
+          "tableTo": "orders",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "first_order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "referral_attributions_referral_code_id_fkey": {
+          "name": "referral_attributions_referral_code_id_fkey",
+          "tableFrom": "referral_attributions",
+          "tableTo": "referral_codes",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "referral_code_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "referral_attributions_referred_user_id_fkey": {
+          "name": "referral_attributions_referred_user_id_fkey",
+          "tableFrom": "referral_attributions",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "referred_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "referral_attr_insert_self": {
+          "name": "referral_attr_insert_self",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(referred_user_id = app.session_user_id())"
+        },
+        "referral_attr_select_referrer": {
+          "name": "referral_attr_select_referrer",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        },
+        "referral_attr_select_referred": {
+          "name": "referral_attr_select_referred",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "eventapp_web"
+          ]
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.user_marketing_preferences": {
+      "name": "user_marketing_preferences",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_opt_in": {
+          "name": "email_opt_in",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sms_opt_in": {
+          "name": "sms_opt_in",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "push_opt_in": {
+          "name": "push_opt_in",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_marketing_preferences_user_id_fkey": {
+          "name": "user_marketing_preferences_user_id_fkey",
+          "tableFrom": "user_marketing_preferences",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {
+        "marketing_prefs_own": {
+          "name": "marketing_prefs_own",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "eventapp_web"
+          ],
+          "withCheck": "(user_id = app.session_user_id())",
+          "using": "(user_id = app.session_user_id())"
+        }
+      },
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "tables": {}
+  }
+}
