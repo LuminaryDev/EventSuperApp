@@ -1,0 +1,61 @@
+Event SuperApp — PostgreSQL migrations
+========================================
+
+First-time setup from zero (Node, pnpm, Postgres, Next.js, .env):
+  docs/FULL_SETUP_GUIDE_FOR_BEGINNERS.md
+
+Prerequisites
+-------------
+- PostgreSQL 14+ recommended (13+ may work; triggers use EXECUTE PROCEDURE).
+- A database created for this app, e.g. event_superapp
+- Superuser or a role that can CREATE EXTENSION, CREATEROLE, and ALTER ... OWNER
+
+Apply order
+-----------
+1) database/migrations/001_initial_schema.sql
+2) database/migrations/002_security_grants_rls.sql
+3) database/migrations/003_platform_extensions.sql   (optional “mega-platform” tables)
+4) database/migrations/004_platform_security.sql     (RLS + grants for 003)
+
+Example (psql)
+--------------
+  psql -U postgres -d event_superapp -v ON_ERROR_STOP=1 -f database/migrations/001_initial_schema.sql
+  psql -U postgres -d event_superapp -v ON_ERROR_STOP=1 -f database/migrations/002_security_grants_rls.sql
+  psql -U postgres -d event_superapp -v ON_ERROR_STOP=1 -f database/migrations/003_platform_extensions.sql
+  psql -U postgres -d event_superapp -v ON_ERROR_STOP=1 -f database/migrations/004_platform_security.sql
+
+Skip 003+004 if you want only the ticketing + transport MVP core (001+002).
+
+Set passwords (outside version control)
+---------------------------------------
+  ALTER ROLE eventapp_web PASSWORD '...';
+  ALTER ROLE eventapp_worker PASSWORD '...';
+
+Runtime wiring
+--------------
+- API pool user: eventapp_web
+  For every request that uses RLS, run at the start of the transaction:
+    SET LOCAL app.user_id = '<internal bigint user id>';
+  Use DISCARD or end the transaction so the setting never leaks across pooled clients.
+
+- Jobs / payment webhooks: eventapp_worker (BYPASSRLS). Lock this account to private network + secret manager.
+
+Bootstrap gaps (intentional)
+----------------------------
+These rows have no INSERT policy for eventapp_web (use superuser, eventapp_worker, or a one-off migration):
+- users (registration — use worker connection or a SECURITY DEFINER signup function you add later)
+- organizations (first org)
+- organization_members (first owner row)
+
+After first user + org exist, organizer flows covered by RLS policies in 002.
+
+Ticket redemption codes
+-----------------------
+- Store only tickets.redemption_code_hash (peppered SHA-256 from app).
+- Rate-limit lookup/check-in APIs; never log raw scanned codes.
+
+Platform extensions (003+004)
+-----------------------------
+- Platform-wide promo codes (org_id NULL): validate with eventapp_worker or a trusted API path; RLS hides them from eventapp_web.
+- analytics_events, audit_admin_events, user_security_tokens: web role has no access; ingest via worker.
+- notification_templates: web can SELECT; mutations via worker / superuser.
